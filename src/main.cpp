@@ -1,0 +1,32 @@
+#include <Arduino.h>
+#include <WiFi.h>
+#include <DNSServer.h>
+#include <WebServer.h>   // O SPIFFS.h si usas SPIFFS
+#include <WiFiManager.h> // para la conexión del usuario
+#include "wifi_manager.h"
+#include "firebase_service.h"
+
+#define LED_BUILTIN 2
+
+void setup()
+{
+  Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  inicializarWiFi();
+
+  // El LED parpadea para confirmar la conexión
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+}
+
+void loop()
+{
+  checkBtnCredencialesDelte();
+  inicializarFirebase();
+}
