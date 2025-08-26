@@ -6,27 +6,30 @@
 #include "wifi_manager.h"
 #include "firebase_service.h"
 
-#define LED_BUILTIN 2
+// #define LED_BUILTIN 2
 
 void setup()
 {
   Serial.begin(115200);
-  pinMode(LED_BUILTIN, OUTPUT);
+  // pinMode(LED_BUILTIN, OUTPUT);
 
   inicializarWiFi();
+  inicializarFirebase();
 
   // El LED parpadea para confirmar la conexión
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
+  // digitalWrite(LED_BUILTIN, HIGH);
+  // delay(500);
+  // digitalWrite(LED_BUILTIN, LOW);
+  // delay(500);
+  // digitalWrite(LED_BUILTIN, HIGH);
+  // delay(500);
+  // digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop()
 {
   checkBtnCredencialesDelte();
-  inicializarFirebase();
+  escucharFirebase();
+
+  delay(2000);
 }

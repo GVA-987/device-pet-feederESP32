@@ -20,7 +20,7 @@ void configModeCallback(WiFiManager *myWiFiManager)
 void borrarCredenciales()
 {
     Serial.println("Borrando credenciales de Wi-Fi...");
-    wifiManager.resetSettings(); // <-- Función correcta de la librería
+    wifiManager.resetSettings();
     Serial.println("Credenciales borradas. Reiniciando Dispositivo...");
     delay(1000);
     ESP.restart();
