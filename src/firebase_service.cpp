@@ -5,7 +5,7 @@
 
 FirebaseConfig config;
 FirebaseAuth auth;
-FirebaseData fbdo; // objeto para enviar/recibir datos de Firebase
+FirebaseData fbdo;
 
 #define LED_BUILTIN 2
 
@@ -13,8 +13,9 @@ void inicializarFirebase()
 {
     Serial.println("Conectando a Firebase...");
     config.api_key = API_KEY;
-    config.database_url = DATABASE_URL;
-    config.project_id = FIREBASE_PROJECT_ID;
+
+    auth.user.email = USER_EMAIL;
+    auth.user.password = USER_PASSWORD;
 
     Firebase.begin(&config, &auth);
 
@@ -25,34 +26,33 @@ void inicializarFirebase()
 }
 void escucharFirebase()
 {
-    // Ruta del documento en Firestore
+
     String documentPath;
     documentPath = "devicesPet/";
-    documentPath += String(DEVICE_ID);
+    documentPath += DEVICE_ID;
 
     // Leer el documento de Firestore
-    if (Firebase.Firestore.getDocument(&fbdo,
-                                       FIREBASE_PROJECT_ID, // Reemplaza con tu projectId real
-                                       "(default)",         // databaseId casi siempre "(default)"
-                                       documentPath.c_str(),
-                                       "")) // documento espesifico, "" vacio traera todo los campos
+    if (Firebase.Firestore.getDocument(&fbdo, "automatedpetfeedingsystem", "(default)", documentPath.c_str(), "")) // documento espesifico, "" vacio traera todo los campos
     {
-        Serial.println("Datos recibido:");
-        Serial.println(fbdo.payload()); // Muestra el JSON que devuelve firestore
+        // Serial.println("Datos recibido:");
+        // Serial.println(fbdo.payload()); // Muestra el JSON que devuelve firestore
 
         // Carga el JSON en un objeto para manipularlo
         FirebaseJson payload;
         payload.setJsonData(fbdo.payload());
+        // Serial.println("Datos procesados:");
+        // Serial.println(payload.raw()); // Muestra el JSON procesado
 
         // extrae un campo en especifico del JSON
         FirebaseJsonData data;
-        if (payload.get(data, "dispense_manual"))
+        if (payload.get(data, "fields/dispense_manual/stringValue"))
         {
-            if (data.boolValue)
+            if (data.type == "string" && data.stringValue == "Activado")
             {
-                Serial.println("¡Comando de dispensar recibido!");
-                Serial.println("➡ DISPENSAR: TRUE (activar motor)");
+                // Serial.println("¡Comando de dispensar recibido!");
+                Serial.println("DISPENSAR: TRUE (activar motor)");
                 digitalWrite(LED_BUILTIN, HIGH);
+                // delay(2000);
 
                 // // Resetear el campo a false
                 // String content = "{\"fields\":{\"dispensar\":{\"booleanValue\":false}}}";
@@ -61,7 +61,7 @@ void escucharFirebase()
                 //                                      "(default)",
                 //                                      documentPath.c_str(),
                 //                                      content,
-                //                                      "dispensar")) // updateMask
+                //                                      "dispensar"))
                 // {
                 //     Serial.println("Comando de dispensar reseteado.");
                 // }
@@ -71,20 +71,21 @@ void escucharFirebase()
                 //     Serial.println(fbdo.errorReason());
                 // }
             }
-            else
+            else if (data.type == "string" && data.stringValue == "Desactivado")
             {
-                Serial.println("➡ DISPENSAR: FALSE (no activar motor)");
+                Serial.println("DISPENSAR: FALSE (no activar motor)");
                 digitalWrite(LED_BUILTIN, LOW);
+                // delay(2000);
             }
         }
         else
         {
-            Serial.println("⚠ El campo 'dispensar' no existe en Firestore.");
+            Serial.println("El campo 'dispense_manual' no existe en Firestore.");
         }
     }
     else
     {
-        Serial.print("❌ Error leyendo documento: ");
+        Serial.print("Error leyendo documento: ");
         Serial.println(fbdo.errorReason());
     }
 }

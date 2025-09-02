@@ -46,14 +46,14 @@ void checkBtnCredencialesDelte()
 {
     if (digitalRead(PIN_PULSADOR) == LOW)
     {
-        delay(500); // Para evitar rebotes
+        delay(500);
         if (digitalRead(PIN_PULSADOR) == LOW)
         {
             borrarCredenciales();
         }
     }
 
-    // Si estás usando el comando por Serial para probar:
+    // para probar en el monitor serial:
     if (Serial.available())
     {
         String reset_cmd = Serial.readStringUntil('\n');

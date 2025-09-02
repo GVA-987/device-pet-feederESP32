@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <DNSServer.h>
-#include <WebServer.h>   // O SPIFFS.h si usas SPIFFS
-#include <WiFiManager.h> // para la conexión del usuario
+#include <WebServer.h>
+#include <WiFiManager.h>
 #include "wifi_manager.h"
 #include "firebase_service.h"
 
@@ -31,5 +31,5 @@ void loop()
   checkBtnCredencialesDelte();
   escucharFirebase();
 
-  delay(2000);
+  // delay(2000);
 }
