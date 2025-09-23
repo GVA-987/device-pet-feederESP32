@@ -3,7 +3,10 @@
 
 #include <Arduino.h>
 
+// Inicialización
 void inicializarFirebase();
-void escucharFirebase();
+
+// Definir correctamente para String
+void reportarEstado();
 
 #endif

@@ -6,30 +6,24 @@
 #include "wifi_manager.h"
 #include "firebase_service.h"
 
-// #define LED_BUILTIN 2
+unsigned long lastReport = 0;
+const unsigned long reportInterval = 10000; // 10 segundos
 
 void setup()
 {
   Serial.begin(115200);
-  // pinMode(LED_BUILTIN, OUTPUT);
 
   inicializarWiFi();
   inicializarFirebase();
-
-  // El LED parpadea para confirmar la conexión
-  // digitalWrite(LED_BUILTIN, HIGH);
-  // delay(500);
-  // digitalWrite(LED_BUILTIN, LOW);
-  // delay(500);
-  // digitalWrite(LED_BUILTIN, HIGH);
-  // delay(500);
-  // digitalWrite(LED_BUILTIN, LOW);
 }
 
 void loop()
 {
   checkBtnCredencialesDelte();
-  escucharFirebase();
+  unsigned long now = millis();
 
-  // delay(2000);
-}
+  if (millis() - lastReport > reportInterval)
+  {
+    lastReport = millis();
+    reportarEstado();
+  }
