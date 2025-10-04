@@ -27,3 +27,4 @@ void loop()
     lastReport = millis();
     reportarEstado();
   }
+}
