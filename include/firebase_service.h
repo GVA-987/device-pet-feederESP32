@@ -5,8 +5,6 @@
 
 // Inicialización
 void inicializarFirebase();
-
-// Definir correctamente para String
 void reportarEstado();
 
 #endif

@@ -1,6 +1,8 @@
 #include <Firebase_ESP_Client.h>
 #include "firebase_service.h"
 #include "firebase_cred.h"
+#include "load_cell.h"
+#include "servo_control.h"
 #include <time.h>
 
 FirebaseConfig config;
@@ -11,6 +13,12 @@ FirebaseData stream;
 FirebaseData fbdoFirestore;
 
 #define Relay_dispense 27
+#define HX711_DOUT 33
+#define HX711_SCK 32
+#define SERVO_PIN 13
+
+LoadCell loadCell(HX711_DOUT, HX711_SCK, -7050.0);
+ServoControl servoControl(SERVO_PIN, 90, 0);
 
 extern "C"
 {
@@ -25,6 +33,7 @@ void reportarEstado();
 void logDispenseToFirestore(const char *type, const char *status, int portionSize);
 void sincronizarTiempoNTP();
 void inicializarFirebase();
+void reconexionFirebase();
 
 void sincronizarTiempoNTP()
 
@@ -44,7 +53,7 @@ void sincronizarTiempoNTP()
 
     if (maxAttempts > 0)
     {
-        Serial.print("\n✅ Hora NTP sincronizada. El tiempo actual (UTC) es: ");
+        Serial.print("\n Hora NTP sincronizada. El tiempo actual (UTC) es: ");
         Serial.println(&timeinfo, "%Y-%m-%d %H:%M:%S");
 
         time_t now = time(nullptr);
@@ -52,7 +61,40 @@ void sincronizarTiempoNTP()
     }
     else
     {
-        Serial.println("\n❌ Falla al obtener la hora del servidor NTP. La conexión será inestable.");
+        Serial.println("\n Falla al obtener la hora del servidor NTP. La conexión será inestable.");
+    }
+}
+
+void reconexionFirebase()
+{
+    Serial.println("Intentando reconectar a Firebase...");
+    Firebase.RTDB.endStream(&stream); // Finalizar el stream actual
+
+    Firebase.begin(&config, &auth);
+    delay(500);
+
+    if (Firebase.ready())
+    {
+        Serial.println("Firebase re-inicializado con éxito.");
+
+        //  Reestablecer el stream RTDB
+        String streamPath = DEVICE_ID;
+        streamPath += "/commands/dispense_manual";
+
+        if (!Firebase.RTDB.beginStream(&stream, streamPath.c_str()))
+        {
+            Serial.print("Error reestableciendo stream: ");
+            Serial.println(stream.errorReason());
+        }
+        else
+        {
+            Firebase.RTDB.setStreamCallback(&stream, streamCallback, streamTimeoutCallback);
+            Serial.println("Stream RTDB reestablecido.");
+        }
+    }
+    else
+    {
+        Serial.println("Fallo en re-inicializar Firebase.");
     }
 }
 
@@ -69,6 +111,9 @@ void inicializarFirebase()
     auth.user.password = USER_PASSWORD;
 
     Firebase.reconnectWiFi(true);
+
+    config.timeout.serverResponse = 10000;
+    config.timeout.socketConnection = 10000;
     Firebase.begin(&config, &auth);
 
     while (Firebase.ready() == false)
@@ -76,7 +121,9 @@ void inicializarFirebase()
         Serial.print(".");
         delay(100);
     }
-    Serial.println("\n✅ Conexión con Firebase establecida.");
+    Serial.println("\n Conexión con Firebase establecida.");
+
+    servoControl.begin();
 
     pinMode(Relay_dispense, OUTPUT);
 
@@ -85,24 +132,27 @@ void inicializarFirebase()
 
     if (!Firebase.RTDB.beginStream(&stream, streamPath.c_str()))
     {
-        Serial.print("❌ Error iniciando stream: ");
+        Serial.print("Error iniciando stream: ");
         Serial.println(stream.errorReason());
     }
     else
     {
         Firebase.RTDB.setStreamCallback(&stream, streamCallback, streamTimeoutCallback);
-        Serial.println("✅ Escuchando cambios en RTDB...");
+        Serial.println("Escuchando cambios en RTDB...");
     }
 }
 
 // Callback cuando hay cambios en RTDB
 void streamCallback(FirebaseStream data)
 {
-
     String commands = DEVICE_ID;
     commands += "/commands/dispense_manual";
 
-    Serial.printf("🔔 Cambio detectado en %s\n", data.dataPath().c_str());
+    String reception = DEVICE_ID;
+    reception += "/commands/command_reception";
+
+    Serial.printf("Cambio detectado en %s\n", data.dataPath().c_str());
+    Firebase.RTDB.setString(&fbdo, reception.c_str(), "success");
 
     if (data.dataType() == "string")
     {
@@ -110,7 +160,11 @@ void streamCallback(FirebaseStream data)
 
         if (valor == "activado")
         {
-            Serial.println("➡ DISPENSAR ACTIVADO");
+            Serial.println("Dispenador activado manualmente.");
+            servoControl.openGate();
+            delay(2500);
+            servoControl.closeGate();
+
             digitalWrite(Relay_dispense, HIGH);
             delay(3000);
             digitalWrite(Relay_dispense, LOW);
@@ -122,12 +176,12 @@ void streamCallback(FirebaseStream data)
         }
         else if (valor == "desactivado")
         {
-            Serial.println("➡ DISPENSAR DESACTIVADO");
+            Serial.println("Dispenador desactivado.");
             digitalWrite(Relay_dispense, LOW);
         }
         else
         {
-            Serial.print("⚠ Valor inesperado: ");
+            Serial.print("Valor inesperado: ");
             Serial.println(valor);
         }
     }
@@ -149,25 +203,32 @@ void logDispenseToFirestore(const char *type, const char *status, int portionSiz
     String project_id = PROJECT_ID;
     const char *collectionName = "dispense_history";
 
-    Serial.println("📤 Enviando registro a Firestore...");
+    Serial.println("Enviando registro a Firestore...");
 
     if (Firebase.Firestore.createDocument(&fbdoFirestore, project_id.c_str(), "", collectionName, content.raw()))
     {
-        Serial.println("✅ Historial de dispensado registrado en Firestore.");
+        Serial.println("Historial de dispensado registrado en Firestore.");
     }
     else
     {
-        Serial.print("❌ Error al registrar historial en Firestore: ");
+        Serial.print("Error al registrar historial en Firestore: ");
         Serial.println(fbdoFirestore.errorReason());
     }
 }
 // Callback cuando hay timeout en el stream
 void streamTimeoutCallback(bool timeout)
 {
+    String reception = DEVICE_ID;
+    reception += "/commands/command_reception";
+
     if (timeout)
-        Serial.println("⏳ Stream timeout, reconectando...");
+        Serial.println("Stream timeout, reconectando...");
+    Firebase.RTDB.setString(&fbdo, reception.c_str(), "timeout_error");
     if (!stream.httpConnected())
-        Serial.printf("❌ Error de stream: %s\n", stream.errorReason().c_str());
+        Serial.printf("Error de stream: %s\n", stream.errorReason().c_str());
+    Firebase.RTDB.setString(&fbdo, reception.c_str(), "connection_error");
+
+    reconexionFirebase();
 }
 
 // Reportar estado del dispositivo
@@ -188,23 +249,33 @@ void reportarEstado()
     pathOnline += "/online";
     String pathLastSeen = basePath;
     pathLastSeen += "/lastSeen";
+    String pathFood = basePath;
+    pathFood += "/food_weight";
 
-    // Señal WiFi
-    int rssi = WiFi.RSSI();
-    unsigned long uptime = millis() / 1000;
-    float chipTempC = (temprature_sens_read() - 32) / 1.8;
+    int rssi = WiFi.RSSI();                                // señal WiFi
+    unsigned long uptime = millis() / 1000;                // tiempo de actividad en segundos
+    float peso = loadCell.readWeight();                    // peso actual del alimento en gramos
+    float chipTempC = (temprature_sens_read() - 32) / 1.8; // temperatura del chip en °C
 
     if (Firebase.RTDB.setInt(&fbdo, pathRssi.c_str(), rssi) &&
         Firebase.RTDB.setFloat(&fbdo, pathTemp.c_str(), chipTempC) &&
         Firebase.RTDB.setInt(&fbdo, pathUptime.c_str(), uptime) &&
         Firebase.RTDB.setString(&fbdo, pathOnline.c_str(), "conectado") &&
-        Firebase.RTDB.setInt(&fbdo, pathLastSeen.c_str(), time(nullptr)))
+        Firebase.RTDB.setInt(&fbdo, pathLastSeen.c_str(), time(nullptr)) &&
+        Firebase.RTDB.setFloat(&fbdo, pathFood.c_str(), peso))
+
     {
-        Serial.print("📡 Estado actualizado: ");
+        Serial.print("Estado actualizado: ");
     }
     else
     {
-        Serial.print("❌ Error reportando estado: ");
+        Serial.print("Error reportando estado: ");
         Serial.println(fbdo.errorReason());
+        if (fbdo.errorReason().indexOf("timed out") != -1 ||
+            fbdo.errorReason().indexOf("connection refused") != -1 ||
+            fbdo.errorReason().indexOf("SSL") != -1)
+        {
+            reconexionFirebase();
+        }
     }
 }

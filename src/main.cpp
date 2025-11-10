@@ -5,6 +5,8 @@
 #include <WiFiManager.h>
 #include "wifi_manager.h"
 #include "firebase_service.h"
+#include "load_cell.h"
+#include "servo_control.h"
 
 unsigned long lastReport = 0;
 const unsigned long reportInterval = 10000; // 10 segundos
