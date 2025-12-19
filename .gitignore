@@ -5,3 +5,5 @@
 .vscode/ipch
 include/firebase_cred.h
 .vscode/
+
+src/config/Config.cpp
