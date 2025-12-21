@@ -1,4 +1,5 @@
 #include "mqtt/MQTTClient.h"
+#include "../../include/actuador/Dispense.h"
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
@@ -7,27 +8,40 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-void callback(char *topic, byte *message, unsigned int length)
+void callback(char *topic, byte *payload, unsigned int length)
 {
-    Serial.print("Mensaje recibido [");
-    Serial.print(topic);
-    Serial.print("] ");
+    StaticJsonDocument<256> doc;
+    deserializeJson(doc, payload, length);
 
-    // comandos manuales que mande el Backend
+    const char *action = doc["action"];
+    int portions = doc["portion"] | 1;
+
+    if (String(action) == "dispense")
+    {
+        // Llamamos a la lógica separada
+        executeManualDispense(portions, client);
+    }
 }
 
 void setupMQTT()
 {
-    if (DEVICE_ID == "") // Por si acaso no se ha inicializado
+    if (DEVICE_ID)
     {
-        // DEVICE_ID = "ESP32_" + WiFi.macAddress();
-        DEVICE_ID = "ESP-PET-J1PZ8X7-A3B6C9D";
-        TOPIC_STATUS = DEVICE_ID + "/status";
-        TOPIC_COMMAND = DEVICE_ID + "/command";
+        TOPIC_STATUS = "petfeeder/" + DEVICE_ID + "/status";
+        TOPIC_COMMAND = "petfeeder/" + DEVICE_ID + "/command";
     }
+
+    // DEVICE_ID = "ESP32_" + WiFi.macAddress();
+    // TOPIC_STATUS = "petfeeder/" + DEVICE_ID + "/status";
+    // TOPIC_COMMAND = "petfeeder/" + DEVICE_ID + "/command";
+
+    Serial.print("ID del Dispositivo: ");
+    Serial.println(DEVICE_ID);
 
     client.setServer(MQTT_SERVER, MQTT_PORT);
     client.setCallback(callback);
+
+    client.setSocketTimeout(15);
 }
 
 void reconnect()

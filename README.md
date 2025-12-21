@@ -1,65 +1,55 @@
-# Dispositivo Alimentador de Mascotas Inteligente (ESP32)
+# 🐾 ESP32 Smart Pet Feeder (MQTT Edition)
 
-## Descripción del Proyecto
+Este repositorio contiene el firmware para un alimentador de mascotas inteligente basado en el microcontrolador **ESP32**. El sistema permite la dispensación remota de alimento y el monitoreo de peso en tiempo real.
 
-Este repositorio contiene el firmware y la documentación para un alimentador de mascotas automatizado y conectado, utilizando un microcontrolador ESP32. El dispositivo permite monitorear el nivel de alimento y dispensar raciones de forma remota o programada, enviando los datos a una plataforma en la nube de Firebase.
+## Nueva Arquitectura de Comunicación
 
-1.  **Monitorear** el nivel de alimento restante mediante una celda de carga.
-2.  **Dispensar** raciones de forma controlada utilizando un servomotor.
-3.  **Sincronizar** todos los datos y el estado con Firebase.
+A diferencia de versiones anteriores, este dispositivo ya no se comunica directamente con Firebase. Ahora utiliza una arquitectura más robusta y escalable basada en eventos:
 
-## 🚀 Funcionalidades Implementadas
+1.  **ESP32**: Actúa como cliente MQTT, publica el peso y se suscribe a comandos.
+2.  **Broker MQTT (HiveMQ)**: Gestiona el paso de mensajes en tiempo real.
+3.  **Backend (Node.js)**: Actúa como puente (Bridge) entre MQTT y Firebase.
+4.  **Firebase**: Almacena el historial y gestiona la autenticación.
 
-- **Conectividad Wi-Fi:** Uso del ESP32 para conexión a internet.
-- **Lectura de Peso (Celda de Carga HX711):** Monitoreo del peso actual del alimento restante y envío de estos datos a Firebase.
-- **Envío de Datos a Firebase:** Sincronización en tiempo real del peso y el estado del dispositivo.
-- **Activación del Servomotor:** Lógica para la dispensación de alimento (actualmente implementada con un giro de 90 grados para pruebas iniciales).
+---
 
-## Hardware Necesario
+## Funcionalidades Implementadas
 
-Para construir y operar este proyecto, necesitarás los siguientes componentes:
+- **Protocolo MQTT**: Comunicación bidireccional de baja latencia.
+- **Control de Servomotor**: Lógica de apertura y cierre para la ración de alimento.
+- **Lectura de Celda de Carga (HX711)**: Monitoreo preciso del inventario de alimento.
+- **Seguridad**: Credenciales separadas del código fuente.
 
-- ESP32
-- Celda de carga con módulo HX711
+---
+
+## Configuración e Instalación
+
+### 1. Requisitos de Hardware
+
+- ESP32 DevKit V1
+- Sensor de Peso (Celda de carga + HX711)
 - Servomotor
-- Fuente de alimentación
+- Fuente de alimentación de 5V/2A
 
-## 🔒 Configuración de Credenciales y Seguridad
+### 2. Configuración del Firmware
 
-**¡ATENCIÓN!** Las claves y credenciales de Firebase deben mantenerse privadas. El repositorio **NO** incluye estos datos sensibles. Sigue estos pasos para configurar tu conexión de forma segura:
+Debido a razones de seguridad, el archivo de configuración ha sido omitido. Debes crearlo manualmente en la siguiente ruta: `src/config/Config.cpp`.
 
-### 1. Configuración Inicial de Firebase
+**Estructura del archivo `Config.cpp`:**
 
-1.  Crea un nuevo proyecto en la Consola de **Firebase**.
-2.  Configura los servicios que vayas a utilizar: **Realtime Database** o **Firestore**, y **Authentication**.
-3.  Obtén tu `API Key`, `Database URL`, y `Project ID` desde la configuración del proyecto.
+```cpp
+#include "Config.h"
 
-### 2. Crear `include/firebase_cred.h`
+// Credenciales de Red
+String WIFI_SSID = "TU_WIFI_NOMBRE";
+String WIFI_PASS = "TU_PASSWORD";
 
-Crea manualmente un archivo llamado `firebase_cred.h` dentro del directorio `include/`. Este archivo contendrá las claves necesarias para la conexión.
+// Configuración del Broker (HiveMQ)
+const char* MQTT_SERVER = "broker.hivemq.com";
+const int MQTT_PORT = 1883;
 
-### 3. ¡Paso Crítico de Seguridad! Actualizar `.gitignore`
-
-Para evitar que tus credenciales se suban accidentalmente al repositorio público, debes incluir la ruta del archivo de credenciales en tu `.gitignore` (ubicado en la raíz del proyecto)
-
-**Asegúrate de reemplazar los valores de ejemplo con tus propias credenciales de Firebase:**
-
-```c
-#ifndef CREDENCIALES_H
-#define CREDENCIALES_H
-
-// Credenciales de la API de Firebase
-#define API_KEY "TU_API_KEY_AQUI"
-#define DATABASE_URL "TU_DATABASE_URL_AQUI"
-#define PROJECT_ID "TU_PROJECT_ID_AQUI"
-
-// Credenciales del usuario para autenticación (si se usa)
-#define USER_EMAIL "TU_EMAIL_DE_PRUEBA_AQUI"
-#define USER_PASSWORD "TU_PASSWORD_AQUI"
-
-// Identificador único para este dispositivo
-#define DEVICE_ID "ESP-PET-TU_ID_UNICO"
-
-#endif
-
+// Identificación y Tópicos
+String DEVICE_ID = "TU-ID-UNICO-EQUIPO";
+String TOPIC_STATUS = "petfeeder/status/" + DEVICE_ID;
+String TOPIC_COMMAND = "petfeeder/command/" + DEVICE_ID;
 ```

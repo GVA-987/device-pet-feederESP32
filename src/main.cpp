@@ -3,16 +3,16 @@
 #include "mqtt/MQTTClient.h"
 #include <WiFi.h>
 #include "Config.h"
-// #include "sensors/TempSensor.h"
 
 unsigned long lastStatusUpdate = 0;
-const unsigned long statusInterval = 30000; // Enviar estado cada 30 segundos
+const unsigned long statusInterval = 10000; // Enviar estado cada 10 segundos
 
 void setup()
 {
     Serial.begin(115200);
 
-    // Conectar WiFi
+    Serial.println("Inicializando Sistema... ");
+
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -21,8 +21,8 @@ void setup()
     }
     Serial.println("\nWiFi Conectado");
 
-    // Configurar MQTT
     setupMQTT();
+    // reconnect();
 }
 
 void loop()
@@ -30,15 +30,15 @@ void loop()
     // Mantener la conexión y procesar mensajes entrantes
     mqttLoop();
 
-    // Enviar estado periódico
+    // Enviar estado periódicamente
     unsigned long currentMillis = millis();
     if (currentMillis - lastStatusUpdate >= statusInterval)
     {
         lastStatusUpdate = currentMillis;
-        float tempSimulada = 24.5;
-        int comidaSimulada = 80;
+        float temperature = 30.5;
+        int foodLevel = 20; // Ejemplo
         int rssi = WiFi.RSSI();
 
-        sendStatus(tempSimulada, comidaSimulada, rssi);
+        sendStatus(temperature, foodLevel, rssi);
     }
 }
