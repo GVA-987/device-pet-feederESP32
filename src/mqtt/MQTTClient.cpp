@@ -4,6 +4,7 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "Config.h"
+#include "network/WifiService.h"
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -18,8 +19,12 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     if (String(action) == "dispense")
     {
-        // Llamamos a la lógica separada
         executeManualDispense(portions, client);
+    }
+    else if (String(action) == "reset_wifi")
+    {
+        Serial.println("COMANDO REMOTO: Reset de WiFi solicitado.");
+        resetNetworkSettings();
     }
 }
 
@@ -30,10 +35,6 @@ void setupMQTT()
         TOPIC_STATUS = "petfeeder/" + DEVICE_ID + "/status";
         TOPIC_COMMAND = "petfeeder/" + DEVICE_ID + "/command";
     }
-
-    // DEVICE_ID = "ESP32_" + WiFi.macAddress();
-    // TOPIC_STATUS = "petfeeder/" + DEVICE_ID + "/status";
-    // TOPIC_COMMAND = "petfeeder/" + DEVICE_ID + "/command";
 
     Serial.print("ID del Dispositivo: ");
     Serial.println(DEVICE_ID);
@@ -58,18 +59,18 @@ void reconnect()
         Serial.print(MQTT_SERVER);
         Serial.print("...");
 
-        if (client.connect(DEVICE_ID.c_str()))
+        if (client.connect(DEVICE_ID.c_str(), TOPIC_STATUS.c_str(), 1, true, "{\"online\": false}"))
         {
             Serial.println("¡Conectado!");
+
+            client.publish(TOPIC_STATUS.c_str(), "{\"online\": true}", true);
+
             client.subscribe(TOPIC_COMMAND.c_str());
-            Serial.print("Suscrito a: ");
-            Serial.println(TOPIC_COMMAND);
         }
         else
         {
-            Serial.print("Falló, rc=");
+            Serial.print("falló, rc=");
             Serial.print(client.state());
-            Serial.println(" reintentando en 5 segundos");
             delay(5000);
         }
     }
@@ -86,7 +87,7 @@ void sendStatus(float temp, int foodLevel, int rssi)
 
     char buffer[200];
     serializeJson(doc, buffer);
-    client.publish(TOPIC_STATUS.c_str(), buffer);
+    client.publish(TOPIC_STATUS.c_str(), buffer, true);
     Serial.println("Estado enviado al Backend");
 }
 
