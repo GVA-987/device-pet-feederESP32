@@ -14,9 +14,10 @@ void setupDispenser()
     myservo.write(0);
 }
 
-void executeManualDispense(int portions, PubSubClient &client)
+void executeDispense(int portions, PubSubClient &client, String type)
 {
     Serial.println("Iniciando ciclo de dispensación...");
+    Serial.printf("Dispensando %d porciones (%s)...\n", portions, type.c_str());
 
     // Simular Apertura
     myservo.write(90);
@@ -28,15 +29,15 @@ void executeManualDispense(int portions, PubSubClient &client)
     Serial.println("Compuerta cerrada.");
 
     StaticJsonDocument<256> report;
-
     // Estructura para Firestore
+    report["event"] = "dispense_done";
     report["portion"] = portions;
+    report["type"] = type;
     report["status"] = "completado";
-    report["type"] = "manual";
 
     // estado actual para que RTDB
     report["temp"] = 25.0; // Valores de ejemplo
-    report["food"] = 75;
+    report["food"];
     report["online"] = true;
 
     char buffer[256];

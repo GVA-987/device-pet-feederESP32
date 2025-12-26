@@ -5,6 +5,6 @@
 #include <PubSubClient.h>
 
 void setupDispenser();
-void executeManualDispense(int portion, PubSubClient &client);
+void executeDispense(int portion, PubSubClient &client, String type);
 
 #endif

@@ -5,12 +5,33 @@
 #include <ArduinoJson.h>
 #include "Config.h"
 #include "network/WifiService.h"
+#include "services/FileService.h"
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+String TOPIC_SCHEDULE = "";
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
+    String message = "";
+    for (int i = 0; i < length; i++)
+    {
+        message += (char)payload[i];
+    }
+    if (String(topic) == TOPIC_SCHEDULE)
+    {
+        Serial.println("Nuevo horario recibido.");
+        if (saveFile("/schedule.json", message.c_str()))
+        {
+            Serial.println("Horario guardado en LittleFS correctamente.");
+        }
+        else
+        {
+            Serial.println("Error al guardar el horario en memoria.");
+        }
+        return;
+    }
+
     StaticJsonDocument<256> doc;
     deserializeJson(doc, payload, length);
 
@@ -19,7 +40,7 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     if (String(action) == "dispense")
     {
-        executeManualDispense(portions, client);
+        executeDispense(portions, client, "manual");
     }
     else if (String(action) == "reset_wifi")
     {
@@ -34,6 +55,7 @@ void setupMQTT()
     {
         TOPIC_STATUS = "petfeeder/" + DEVICE_ID + "/status";
         TOPIC_COMMAND = "petfeeder/" + DEVICE_ID + "/command";
+        TOPIC_SCHEDULE = "petfeeder/" + DEVICE_ID + "/schedule";
     }
 
     Serial.print("ID del Dispositivo: ");
@@ -62,10 +84,9 @@ void reconnect()
         if (client.connect(DEVICE_ID.c_str(), TOPIC_STATUS.c_str(), 1, true, "{\"online\": false}"))
         {
             Serial.println("¡Conectado!");
-
             client.publish(TOPIC_STATUS.c_str(), "{\"online\": true}", true);
-
             client.subscribe(TOPIC_COMMAND.c_str());
+            client.subscribe(TOPIC_SCHEDULE.c_str());
         }
         else
         {
