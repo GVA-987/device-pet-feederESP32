@@ -1,4 +1,4 @@
-#include "services/TemperatureIntService.h"
+#include "sensors/TemperatureIntService.h"
 
 #ifdef __cplusplus
 extern "C"

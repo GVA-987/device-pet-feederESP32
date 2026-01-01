@@ -4,6 +4,7 @@
 #include "network/WifiService.h"
 #include "services/FileService.h"
 #include "services/ScheduleService.h"
+#include "sensors/WeightSensor.h"
 #include <WiFi.h>
 #include "Config.h"
 #include "network/TimeService.h"
@@ -20,6 +21,7 @@ void setup()
     setupFiles();
 
     setupNetwork();
+    setupWeightSensor();
 
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     while (WiFi.status() != WL_CONNECTED)
@@ -39,6 +41,8 @@ void loop()
     // Mantener la conexión y procesar mensajes entrantes
     mqttLoop();
     checkSchedule();
+
+    updateWeightSensor();
 
     static unsigned long lastLog = 0;
     if (millis() - lastLog > 5000)
@@ -60,9 +64,8 @@ void loop()
     if (currentMillis - lastStatusUpdate >= statusInterval)
     {
         lastStatusUpdate = currentMillis;
-        int foodLevel = 20; // Ejemplo
         int rssi = WiFi.RSSI();
 
-        sendStatus(foodLevel, rssi);
+        sendStatus(rssi);
     }
 }

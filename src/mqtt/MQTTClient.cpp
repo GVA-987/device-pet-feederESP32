@@ -6,7 +6,8 @@
 #include "Config.h"
 #include "network/WifiService.h"
 #include "services/FileService.h"
-#include "services/TemperatureIntService.h"
+#include "sensors/TemperatureIntService.h"
+#include "sensors/WeightSensor.h"
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -99,12 +100,14 @@ void reconnect()
 }
 
 // Función para enviar el estado
-void sendStatus(int foodLevel, int rssi)
+void sendStatus(int rssi)
 {
     float currentTemp = getInternalTemperature();
+    float currentWeight = getFoodWeight();
+
     StaticJsonDocument<200> doc;
     doc["temp"] = currentTemp;
-    doc["food"] = foodLevel;
+    doc["food"] = currentWeight;
     doc["rssi"] = rssi;
     doc["online"] = true;
 
