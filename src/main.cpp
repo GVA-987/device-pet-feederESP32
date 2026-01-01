@@ -38,7 +38,6 @@ void loop()
 {
     // Mantener la conexión y procesar mensajes entrantes
     mqttLoop();
-
     checkSchedule();
 
     static unsigned long lastLog = 0;
@@ -61,10 +60,9 @@ void loop()
     if (currentMillis - lastStatusUpdate >= statusInterval)
     {
         lastStatusUpdate = currentMillis;
-        float temperature = 30.5;
         int foodLevel = 20; // Ejemplo
         int rssi = WiFi.RSSI();
 
-        sendStatus(temperature, foodLevel, rssi);
+        sendStatus(foodLevel, rssi);
     }
 }
