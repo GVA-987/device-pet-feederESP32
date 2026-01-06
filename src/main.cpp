@@ -8,6 +8,7 @@
 #include <WiFi.h>
 #include "Config.h"
 #include "network/TimeService.h"
+#include "actuador/Dispense.h"
 
 unsigned long lastStatusUpdate = 0;
 const unsigned long statusInterval = 10000; // Enviar estado cada 10 segundos
@@ -22,6 +23,7 @@ void setup()
 
     setupNetwork();
     setupWeightSensor();
+    setupDispenser();
 
     WiFi.begin(WIFI_SSID, WIFI_PASS);
     while (WiFi.status() != WL_CONNECTED)
