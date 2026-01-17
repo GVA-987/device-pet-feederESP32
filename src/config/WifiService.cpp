@@ -63,7 +63,7 @@ void setupNetwork()
         // Añadir logo o icono
         "<h1 style='text-align:center;'>🐾 PetFeeder Pro</h1>");
 
-    String apName = "Configurar_Alimentador_" + DEVICE_ID;
+    String apName = "PetFeeder - " + DEVICE_ID;
 
     Serial.println("Iniciando WiFiManager...");
 

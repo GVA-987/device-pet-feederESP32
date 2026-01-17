@@ -9,13 +9,15 @@
 #include "Config.h"
 #include "network/TimeService.h"
 #include "actuador/Dispense.h"
+#include "sensors/DisplayManager.h"
 
 unsigned long lastStatusUpdate = 0;
-const unsigned long statusInterval = 10000; // Enviar estado cada 10 segundos
+const unsigned long statusInterval = 5000; // Enviar estado cada 5 segundos
 
 void setup()
 {
     Serial.begin(115200);
+    display.begin();
     pinMode(0, INPUT_PULLUP);
 
     Serial.println("Inicializando Sistema... ");
@@ -61,12 +63,15 @@ void loop()
         lastCheck = millis();
     }
 
-    // Enviar estado periódicamente
     unsigned long currentMillis = millis();
     if (currentMillis - lastStatusUpdate >= statusInterval)
     {
         lastStatusUpdate = currentMillis;
         int rssi = WiFi.RSSI();
+        float peso = getFoodWeight();
+        bool wifiOk = (WiFi.status() == WL_CONNECTED);
+        String hora = getFormattedTime();
+        display.update(peso, wifiOk, hora, rssi);
 
         sendStatus(rssi);
     }

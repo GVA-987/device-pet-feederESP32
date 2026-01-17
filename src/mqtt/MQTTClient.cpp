@@ -83,10 +83,10 @@ void reconnect()
         Serial.print(MQTT_SERVER);
         Serial.print("...");
 
-        if (client.connect(DEVICE_ID.c_str(), TOPIC_STATUS.c_str(), 1, true, "{\"online\": false}"))
+        if (client.connect(DEVICE_ID.c_str(), TOPIC_STATUS.c_str(), 1, true, "{\"online\": false, \"event\": \"connection_change\"}"))
         {
             Serial.println("¡Conectado!");
-            client.publish(TOPIC_STATUS.c_str(), "{\"online\": true}", true);
+            client.publish(TOPIC_STATUS.c_str(), "{\"online\": true, \"event\": \"startup\"}", true);
             client.subscribe(TOPIC_COMMAND.c_str());
             client.subscribe(TOPIC_SCHEDULE.c_str());
         }
@@ -110,6 +110,7 @@ void sendStatus(int rssi)
     doc["food"] = currentWeight;
     doc["rssi"] = rssi;
     doc["online"] = true;
+    doc["event"] = "status_update";
 
     char buffer[200];
     serializeJson(doc, buffer);
