@@ -15,7 +15,7 @@ private:
     const int scl_pin = 32;
     const uint8_t lcd_addr = 0x27;
 
-    const unsigned long interval = 4000; // Cambio pantalla cada 4s
+    const unsigned long interval = 4000; 
 
 public:
     DisplayManager() : lcd(0x27, 16, 2), lastUpdate(0), currentScreen(0) {}
@@ -24,6 +24,7 @@ public:
     void update(float peso, bool isWifiOk, String hora, int rssi);
     void showFeeding();
     void showSyncing();
+    void showTaraStatus(bool start);
 };
 
 extern DisplayManager display;

@@ -10,6 +10,7 @@
 #include "network/TimeService.h"
 #include "actuador/Dispense.h"
 #include "sensors/DisplayManager.h"
+#include "sensors/TemperatureIntService.h"
 
 unsigned long lastStatusUpdate = 0;
 const unsigned long statusInterval = 5000; // Enviar estado cada 5 segundos
@@ -42,37 +43,44 @@ void setup()
 
 void loop()
 {
-    // Mantener la conexión y procesar mensajes entrantes
     mqttLoop();
     checkSchedule();
-
     updateWeightSensor();
+    float pesoActual = getFoodWeight();
+    
+    static float weightRead = 0;
+    if (pesoActual != -1.0) {
+        weightRead = pesoActual;
+    }
+
+    int rssi = WiFi.RSSI();
+    bool wifiOk = (WiFi.status() == WL_CONNECTED);
+    String hora = getFormattedTime();
+
+    static unsigned long lastLcdUpdate = 0;
+    if (millis() - lastLcdUpdate >= 500) {
+        display.update(weightRead, wifiOk, hora, rssi);
+        lastLcdUpdate = millis();
+    }
 
     static unsigned long lastLog = 0;
-    if (millis() - lastLog > 5000)
-    {
-        Serial.print("📅 Hora actual: ");
-        Serial.println(getFormattedTime());
+    if (millis() - lastLog > 5000) {
+        Serial.print(" Hora: "); Serial.print(hora);
+        Serial.print(" | Peso: "); Serial.print(weightRead);
+        Serial.print(" | Temp: "); Serial.println(getInternalTemperature());
         lastLog = millis();
     }
 
-    static unsigned long lastCheck = 0;
-    if (millis() - lastCheck > 1000)
-    {
-        checkResetButton();
-        lastCheck = millis();
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastStatusUpdate >= statusInterval) {
+        lastStatusUpdate = currentMillis;
+        sendStatus(rssi, weightRead);
     }
 
-    unsigned long currentMillis = millis();
-    if (currentMillis - lastStatusUpdate >= statusInterval)
-    {
-        lastStatusUpdate = currentMillis;
-        int rssi = WiFi.RSSI();
-        float peso = getFoodWeight();
-        bool wifiOk = (WiFi.status() == WL_CONNECTED);
-        String hora = getFormattedTime();
-        display.update(peso, wifiOk, hora, rssi);
-
-        sendStatus(rssi);
+    // Botón de Reset
+    static unsigned long lastCheck = 0;
+    if (millis() - lastCheck > 1000) {
+        checkResetButton();
+        lastCheck = millis();
     }
 }

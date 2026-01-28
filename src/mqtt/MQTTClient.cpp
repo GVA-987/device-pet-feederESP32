@@ -100,14 +100,14 @@ void reconnect()
 }
 
 // Función para enviar el estado
-void sendStatus(int rssi)
+void sendStatus(int rssi, float pesoActual)
 {
     float currentTemp = getInternalTemperature();
-    float currentWeight = getFoodWeight();
+    // float pesoActual = getFoodWeight();
 
     StaticJsonDocument<200> doc;
     doc["temp"] = currentTemp;
-    doc["food"] = currentWeight;
+    doc["food"] = pesoActual;
     doc["rssi"] = rssi;
     doc["online"] = true;
     doc["event"] = "status_update";

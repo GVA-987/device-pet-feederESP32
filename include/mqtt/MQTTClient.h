@@ -9,7 +9,7 @@ void reconnect();
 
 void mqttLoop();
 
-void sendStatus(int rssi);
+void sendStatus(int rssi, float pesoActual);
 
 extern String DEVICE_ID;
 extern String TOPIC_STATUS;
