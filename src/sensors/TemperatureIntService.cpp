@@ -11,7 +11,13 @@ extern "C"
 
 float getInternalTemperature()
 {
-    uint8_t temp_f = temprature_sens_read();
-    float temp_c = (temp_f - 32) / 1.8;
+    float total = 0;
+    for(int i = 0; i < 10; i++) {
+        total += temprature_sens_read();
+        delay(2); 
+    }
+    float avg_f = total / 10.0;
+    float temp_c = (avg_f - 32) / 1.8;
+
     return temp_c;
 }

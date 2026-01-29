@@ -105,14 +105,17 @@ void sendStatus(int rssi, float pesoActual)
     float currentTemp = getInternalTemperature();
     // float pesoActual = getFoodWeight();
 
-    StaticJsonDocument<200> doc;
+    StaticJsonDocument<400> doc;
     doc["temp"] = currentTemp;
     doc["food"] = pesoActual;
     doc["rssi"] = rssi;
     doc["online"] = true;
     doc["event"] = "status_update";
+    doc["ssid"] = WiFi.SSID();
+    doc["ip"] = WiFi.localIP().toString();
+    doc["mac"] = WiFi.macAddress(); 
 
-    char buffer[200];
+    char buffer[400];
     serializeJson(doc, buffer);
     client.publish(TOPIC_STATUS.c_str(), buffer, true);
     Serial.println("Estado enviado al Backend");

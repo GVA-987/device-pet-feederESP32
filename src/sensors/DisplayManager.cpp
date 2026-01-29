@@ -52,7 +52,11 @@ void DisplayManager::update(float peso, bool isWifiOk, String hora, int rssi)
     lcd.setCursor(0, 1);
     float t = getInternalTemperature();
     lcd.print("T:");
-    lcd.print((int)t);
+    if (t > 10 && t < 90) {
+        lcd.print((int)t);
+    } else {
+        lcd.print("--");
+    }
     lcd.print("C   ");
 
     lcd.setCursor(8, 1);
