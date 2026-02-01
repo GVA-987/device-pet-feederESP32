@@ -21,13 +21,17 @@ void checkSchedule()
     }
 
     String json = readFile("/schedule.json");
-    if (json == "" || json == "null")
+    if (json == "" || json == "null" || json.length() < 10)
+        return;
+
+    DynamicJsonDocument doc(2560);
+    DeserializationError error = deserializeJson(doc, json);
+    if (error)
     {
+        Serial.print("Error al deserializar JSON: ");
+        Serial.println(error.c_str());
         return;
     }
-
-    DynamicJsonDocument doc(2048);
-    deserializeJson(doc, json);
     JsonArray arr = doc.as<JsonArray>();
 
     char currentTime[6]; // "HH:MM"

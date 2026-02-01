@@ -66,6 +66,7 @@ void setupMQTT()
     client.setServer(MQTT_SERVER, MQTT_PORT);
     client.setCallback(callback);
 
+    client.setBufferSize(2048);
     client.setSocketTimeout(15);
 }
 
@@ -113,7 +114,7 @@ void sendStatus(int rssi, float pesoActual)
     doc["event"] = "status_update";
     doc["ssid"] = WiFi.SSID();
     doc["ip"] = WiFi.localIP().toString();
-    doc["mac"] = WiFi.macAddress(); 
+    doc["mac"] = WiFi.macAddress();
 
     char buffer[400];
     serializeJson(doc, buffer);
