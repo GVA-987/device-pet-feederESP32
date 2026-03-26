@@ -24,7 +24,7 @@ void checkSchedule()
     if (json == "" || json == "null" || json.length() < 10)
         return;
 
-    DynamicJsonDocument doc(2560);
+    DynamicJsonDocument doc(3000);
     DeserializationError error = deserializeJson(doc, json);
     if (error)
     {
@@ -44,6 +44,7 @@ void checkSchedule()
         const char *scheduleTime = obj["time"];
         JsonArray days = obj["days"];
         int portion = obj["portion"] | 1;
+        int gramsToDispense = obj["grams"] | obj["weight_portion"] | 0;
 
         if (enabled && String(scheduleTime) == String(currentTime))
         {
@@ -62,7 +63,7 @@ void checkSchedule()
             {
                 lastMinuteChecked = timeinfo.tm_min;
                 Serial.printf("¡HORARIO PROGRAMADO! Ejecutando programa: %s\n", scheduleTime);
-                executeDispense(portion, client, "programado");
+                executeDispense(gramsToDispense, portion, client, "programado");
                 return;
             }
         }

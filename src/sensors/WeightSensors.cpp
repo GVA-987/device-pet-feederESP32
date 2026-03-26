@@ -9,21 +9,28 @@ const int TARE_BTN_PIN = 4;
 
 float calibration_factor = 420.1; // Ajustar según calibración
 
-void saveOffsetToMemory(long offset) {
+void saveOffsetToMemory(long offset)
+{
     File file = LittleFS.open("/offset.txt", "w");
-    if (file) {
+    if (file)
+    {
         file.print(offset);
         file.close();
         Serial.println("Offset guardado en memoria.");
     }
 }
 
-long readOffsetFromMemory() {
-    if (LittleFS.exists("/offset.txt")) {
+long readOffsetFromMemory()
+{
+    if (LittleFS.exists("/offset.txt"))
+    {
         File file = LittleFS.open("/offset.txt", "r");
         String content = file.readString();
         file.close();
-        return content.toInt();
+
+        long valor = content.toInt();
+        if (valor != 0)
+            return valor;
     }
     return 0; // Si no existe, devuelve 0
 }
@@ -35,13 +42,17 @@ void setupWeightSensor()
     scale.set_scale(calibration_factor);
 
     long savedOffset = readOffsetFromMemory();
-    if (savedOffset != 0) {
+    if (savedOffset != 0)
+    {
         scale.set_offset(savedOffset);
         Serial.print("Tara recuperada de memoria: ");
         Serial.println(savedOffset);
-    } else {
+    }
+    else
+    {
         Serial.println("No hay tara guardada. Realizando tara inicial...");
         scale.tare();
+        saveOffsetToMemory(scale.get_offset());
     }
 }
 
@@ -59,11 +70,9 @@ void updateWeightSensor()
     // Leer comando desde el monitor serial
     String comando = Serial.readStringUntil('\n');
     comando.trim();
-
-    if (comando == "TARAR") {
-        Serial.println("Ejecutando tara...");
+    if (comando == "TARAR")
+    {
         calibrateTare();
-        Serial.println("Tara completada.");
     }
     // Fin de lectura de comando
 
@@ -81,7 +90,7 @@ void updateWeightSensor()
     }
 }
 
-float getFoodWeight()
+float getFoodWeight(int samples)
 {
     // Esperar hasta 200ms si el sensor está ocupado
     unsigned long timeout = millis();
@@ -92,8 +101,9 @@ float getFoodWeight()
 
     if (scale.is_ready())
     {
-        float weight = scale.get_units(20); // Promedio de 20 lecturas
-        if (weight > -2.0 && weight < 2.0) {
+        float weight = scale.get_units(samples); // Promedio de samples lecturas
+        if (weight > -2.0 && weight < 2.0)
+        {
             return 0.0;
         }
 
@@ -101,6 +111,7 @@ float getFoodWeight()
     }
     else
     {
+        Serial.println("Error: Sensor de peso no listo."); // Debug
         return -1.0;
     }
 }

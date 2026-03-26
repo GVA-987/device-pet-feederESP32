@@ -6,6 +6,9 @@ extern const char *WIFI_SSID;
 extern const char *WIFI_PASS;
 extern const char *MQTT_SERVER;
 extern const int MQTT_PORT;
+extern const char *MQTT_USER;
+extern const char *MQTT_PASS;
+extern const char *root_ca;
 
 extern String DEVICE_ID;
 extern String TOPIC_STATUS;

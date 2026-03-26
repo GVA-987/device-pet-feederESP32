@@ -8,7 +8,7 @@
 void setupWeightSensor();
 
 // Retorna el peso actual en gramos
-float getFoodWeight();
+float getFoodWeight(int samples = 20);
 void updateWeightSensor();
 void calibrateTare();
 #endif

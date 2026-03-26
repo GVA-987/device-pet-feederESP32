@@ -15,14 +15,16 @@ private:
     const int scl_pin = 32;
     const uint8_t lcd_addr = 0x27;
 
-    const unsigned long interval = 4000; 
+    // const unsigned long interval = 4000; // Intervalo de actualización en ms
 
 public:
     DisplayManager() : lcd(0x27, 16, 2), lastUpdate(0), currentScreen(0) {}
 
     void begin();
     void update(float peso, bool isWifiOk, String hora, int rssi);
-    void showFeeding();
+    void showFeeding(float pesoActual, float pesoInicial, float gramosPedidos);
+    void showFeedingStatus(float gramosPedidos);
+    void showDispenseResult(String status, float cantidad);
     void showSyncing();
     void showTaraStatus(bool start);
 };

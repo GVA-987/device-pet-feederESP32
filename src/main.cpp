@@ -47,9 +47,10 @@ void loop()
     checkSchedule();
     updateWeightSensor();
     float pesoActual = getFoodWeight();
-    
+
     static float weightRead = 0;
-    if (pesoActual != -1.0) {
+    if (pesoActual != -1.0)
+    {
         weightRead = pesoActual;
     }
 
@@ -58,28 +59,35 @@ void loop()
     String hora = getFormattedTime();
 
     static unsigned long lastLcdUpdate = 0;
-    if (millis() - lastLcdUpdate >= 500) {
+    if (millis() - lastLcdUpdate >= 500)
+    {
         display.update(weightRead, wifiOk, hora, rssi);
         lastLcdUpdate = millis();
     }
 
     static unsigned long lastLog = 0;
-    if (millis() - lastLog > 5000) {
-        Serial.print(" Hora: "); Serial.print(hora);
-        Serial.print(" | Peso: "); Serial.print(weightRead);
-        Serial.print(" | Temp: "); Serial.println(getInternalTemperature());
+    if (millis() - lastLog > 5000)
+    {
+        Serial.print(" Hora: ");
+        Serial.print(hora);
+        Serial.print(" | Peso: ");
+        Serial.print(weightRead);
+        Serial.print(" | Temp: ");
+        Serial.println(getInternalTemperature());
         lastLog = millis();
     }
 
     unsigned long currentMillis = millis();
-    if (currentMillis - lastStatusUpdate >= statusInterval) {
+    if (currentMillis - lastStatusUpdate >= statusInterval)
+    {
         lastStatusUpdate = currentMillis;
         sendStatus(rssi, weightRead);
     }
 
     // Botón de Reset
     static unsigned long lastCheck = 0;
-    if (millis() - lastCheck > 1000) {
+    if (millis() - lastCheck > 1000)
+    {
         checkResetButton();
         lastCheck = millis();
     }

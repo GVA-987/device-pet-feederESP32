@@ -1,6 +1,7 @@
 #include "mqtt/MQTTClient.h"
 #include "../../include/actuador/Dispense.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "Config.h"
@@ -9,7 +10,7 @@
 #include "sensors/TemperatureIntService.h"
 #include "sensors/WeightSensor.h"
 
-WiFiClient espClient;
+WiFiClientSecure espClient;
 PubSubClient client(espClient);
 String TOPIC_SCHEDULE = "";
 
@@ -39,10 +40,11 @@ void callback(char *topic, byte *payload, unsigned int length)
 
     const char *action = doc["action"];
     int portions = doc["portion"] | 1;
+    int grams = doc["grams"];
 
     if (String(action) == "dispense")
     {
-        executeDispense(portions, client, "manual");
+        executeDispense(grams, portions, client, "manual");
     }
     else if (String(action) == "reset_wifi")
     {
@@ -62,6 +64,7 @@ void setupMQTT()
 
     Serial.print("ID del Dispositivo: ");
     Serial.println(DEVICE_ID);
+    espClient.setCACert(root_ca);
 
     client.setServer(MQTT_SERVER, MQTT_PORT);
     client.setCallback(callback);
@@ -84,7 +87,7 @@ void reconnect()
         Serial.print(MQTT_SERVER);
         Serial.print("...");
 
-        if (client.connect(DEVICE_ID.c_str(), TOPIC_STATUS.c_str(), 1, true, "{\"online\": false, \"event\": \"connection_change\"}"))
+        if (client.connect(DEVICE_ID.c_str(), MQTT_USER, MQTT_PASS, TOPIC_STATUS.c_str(), 1, true, "{\"online\": false, \"event\": \"connection_change\"}"))
         {
             Serial.println("¡Conectado!");
             client.publish(TOPIC_STATUS.c_str(), "{\"online\": true, \"event\": \"startup\"}", true);
@@ -106,7 +109,7 @@ void sendStatus(int rssi, float pesoActual)
     float currentTemp = getInternalTemperature();
     // float pesoActual = getFoodWeight();
 
-    StaticJsonDocument<400> doc;
+    StaticJsonDocument<512> doc;
     doc["temp"] = currentTemp;
     doc["food"] = pesoActual;
     doc["rssi"] = rssi;
@@ -116,9 +119,9 @@ void sendStatus(int rssi, float pesoActual)
     doc["ip"] = WiFi.localIP().toString();
     doc["mac"] = WiFi.macAddress();
 
-    char buffer[400];
+    char buffer[512];
     serializeJson(doc, buffer);
-    client.publish(TOPIC_STATUS.c_str(), buffer, true);
+    client.publish(TOPIC_STATUS.c_str(), buffer, false);
     Serial.println("Estado enviado al Backend");
 }
 
