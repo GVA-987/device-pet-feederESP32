@@ -18,15 +18,22 @@ void checkResetButton()
             resetNetworkSettings();
         }
     }
-    if (rst == "reset")
+    if (Serial.available() > 0)
     {
-        resetNetworkSettings();
+        String comando = Serial.readStringUntil('\n'); // Lee lo que escribas en el monitor
+        comando.trim();                                // Quita espacios o saltos de línea extra
+
+        if (comando == "reset")
+        {
+            Serial.println("Comando 'reset' recibido vía Serial.");
+            resetNetworkSettings();
+        }
     }
 }
 
 void setupNetwork()
 {
-    wm.setTitle("PetFeeder - Conectar WiFi");
+    wm.setTitle("Conectar WiFi");
     wm.setConfigPortalTimeout(300);
 
     std::vector<const char *> menu = {"wifi", "exit"};
@@ -35,11 +42,17 @@ void setupNetwork()
     wm.setCustomHeadElement(
         "<style>"
         // Fuente y fondo
-        "body { background-color: #2c3e50; font-family: 'Roboto', sans-serif; color: #ecf0f1; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }"
-        // Contenedor principal
+        "body { background-color: #2c3e50; font-family: 'Roboto', sans-serif; color: #ecf0f1; margin: 0; "
+        "display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; }"
+
+        // Contenedor principal (el Card)
         ".wrap { background-color: #34495e; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.4); max-width: 400px; width: 90%; }"
-        // Título
-        "h1 { color: #2ecc71; text-align: center; margin-bottom: 25px; font-size: 2.2em; }"
+
+        // Estilo para el título principal (PetFeeder Pro)
+        ".main-title { color: #2ecc71; font-size: 3.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); font-weight: bold; }"
+
+        // Títulos internos (h1 originales de WiFiManager)
+        "h1 { color: #2ecc71; text-align: center; margin-bottom: 25px; font-size: 1.5em; }"
         // Input y Selectores
         "input[type='text'], input[type='password'], select { "
         "   width: calc(100% - 20px); padding: 12px; margin-bottom: 15px; border: 1px solid #4a6a8c; border-radius: 6px; "
@@ -61,13 +74,14 @@ void setupNetwork()
         "a:hover { text-decoration: underline; }"
         "</style>"
         // Añadir logo o icono
-        "<h1 style='text-align:center;'>🐾 PetFeeder Pro</h1>");
+        "<h1 style='text-align:center;'>🐾 Device PetFeeder</h1>");
 
-    String apName = "PetFeeder - " + DEVICE_ID;
+    // String apName = "DevicePet - " + DEVICE_ID;
 
     Serial.println("Iniciando WiFiManager...");
 
-    if (!wm.autoConnect(apName.c_str()))
+    // if (!wm.autoConnect(apName.c_str()))
+    if (!wm.autoConnect())
     {
         Serial.println("Fallo en la conexión o timeout del portal.");
         delay(3000);
